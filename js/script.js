@@ -61,7 +61,6 @@ window.addEventListener('load', () => {
             this.speedY = 0; 
             this.maxSpeed = 3;
             this.projectiles = [];
-   
         }
 
         update() {
@@ -106,7 +105,22 @@ window.addEventListener('load', () => {
     }
 
     class UI{
+        constructor(game) {
+            this.game = game;
+            this.fontSize = 30;
+            this.fontFamily = 'Helvetica';
+            this.color = 'yellow';
+        }   
+        draw(context) {
+            context.font = `${this.fontSize}px ${this.fontFamily}`;
 
+            context.fillStyle = this.color;
+
+            context.fillText(`Ammo: ${this.game.ammo}`, 20, 40);
+            for (let i = 0; i < this.game.ammo; i++) {
+                context.fillRect(20 + (i * 10), 50, 5, 20);
+            }   
+        }    
     }
 
     class Game {
@@ -115,6 +129,7 @@ window.addEventListener('load', () => {
             this.height = height;
             this.player = new Player(this);
             this.inputHandler = new InputHandler(this);
+            this.ui = new UI(this);
             this.keys = [];
             this.ammo = 20;
             this.ammoTimer = 0;
@@ -132,6 +147,7 @@ window.addEventListener('load', () => {
         }
         draw(context) {
             this.player.draw(context);
+            this.ui.draw(context);
         }
     } 
 
