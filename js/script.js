@@ -31,19 +31,19 @@ window.addEventListener('load', () => {
             this.game = game;
             this.x = x;
             this.y = y;
-            this.width = 30;
-            this.height = 3;
-            this.speed = 80;
+            this.width = 100;
+            this.height = 10;
+            this.speed = 90;
             this.markedForDeletion = false;
         }
         update() {
             this.x += this.speed;
-            if(this.x > this.game.width * 0.80 ) this.markedForDeletion = true;
+            if(this.x > this.game.width * 90 ) this.markedForDeletion = true;
         }
 
         draw(context) {
             context.fillStyle = 'yellow';
-            context.fillRect(this.x, this.y, this.width, this.height + 20);
+            context.fillRect(this.x, this.y, this.width, this.height );
         }
     }
 
@@ -160,12 +160,33 @@ window.addEventListener('load', () => {
             context.fillText(`Lives: ${this.game.player.player_lives}`, 20, 40);
 
             // score
-            context.fillStyle = 'yellow';
+            context.fillStyle = 'White';
             context.fillText(`Score: ${this.game.score}`, 140, 40);
 
             for (let i = 0; i < this.game.ammo; i++) {
                 context.fillRect(20 + (i * 10), 100, 5, 40);
-            }   
+            }  
+            // game time on screen
+            context.fillStyle = 'White';
+            context.fillText(`Time: ${Math.floor(this.game.gameTime / 1000)}`, 280, 40); 
+
+            if (this.game.gameOver) {
+                    context.textAlign = 'center';
+                    let message1 = 'Game Over';
+                    let message2 = 'Press space to restart';
+                    if(game.score >= game.winningScore) {
+                        message1 = 'You Win!';
+                        message2 = 'Well done Press Enter to restart';
+                    }else{
+                        message1 = 'Game Over';
+                        message2 = 'Press Enter to restart';
+                    }
+                    context.font = "60px "+ this.fontFamily;
+                    context.fillText(message1, this.game.width * 0.5, this.game.height * 0.5);
+
+                    context.font = "30px "+ this.fontFamily;
+                    context.fillText(message2, this.game.width * 0.5, this.game.height * 0.6);
+            }
             context.restore()
         }    
     }
@@ -189,9 +210,15 @@ window.addEventListener('load', () => {
             this.enemyInterval = 1000;
             this.score = 0;
             this.winningScore = 10;
+            this.gameTime = 0;
+            this.timeLimit = 10000;
+            
         }
 
         update( deltaTime) {
+            if(!this.gameOver) this.gameTime += deltaTime;
+            if(this.gameTime > this.timeLimit) this.gameOver = true;
+                  
             this.player.update();
             if(this.ammoTimer > this.ammoInterval ) {
                 if(this.ammo < this.maxAmmo) this.ammo++;
@@ -213,7 +240,7 @@ window.addEventListener('load', () => {
                         projectile.markedForDeletion = true;
                         if(enemy.lives <= 0) {
                             enemy.markedForDeletion = true;
-                            this.score += enemy.score;
+                           if( !this.gameOver) this.score += enemy.score;
                             if(this.score >= this.winningScore) {
                                 this.gameOver = true;
                             }
