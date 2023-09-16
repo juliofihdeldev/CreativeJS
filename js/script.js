@@ -27,7 +27,7 @@ window.addEventListener('load', () => {
     }
 
     class Projectile {  
-        constructor(game, x, y) {
+        constructor(game, x, y) {``
             this.game = game;
             this.x = x;
             this.y = y;
@@ -148,14 +148,25 @@ window.addEventListener('load', () => {
             this.color = 'yellow';
         }   
         draw(context) {
-            context.font = `${this.fontSize}px ${this.fontFamily}`;
+            context.save()
             context.fillStyle = this.color;
+            context.font = `${this.fontSize}px ${this.fontFamily}`;
+            context.shadowOffsetX = 2;
+            context.shadowOffsetY = 2;
+            context.shadowColor = 'black';
+            context.shadowBlur = 2;
+
             context.fillText(`Ammo: ${this.game.ammo}`, 20, 80);
             context.fillText(`Lives: ${this.game.player.player_lives}`, 20, 40);
+
+            // score
+            context.fillStyle = 'yellow';
+            context.fillText(`Score: ${this.game.score}`, 140, 40);
 
             for (let i = 0; i < this.game.ammo; i++) {
                 context.fillRect(20 + (i * 10), 100, 5, 40);
             }   
+            context.restore()
         }    
     }
 
@@ -176,7 +187,10 @@ window.addEventListener('load', () => {
 
             this.enemyTimer = 0;
             this.enemyInterval = 1000;
+            this.score = 0;
+            this.winningScore = 10;
         }
+
         update( deltaTime) {
             this.player.update();
             if(this.ammoTimer > this.ammoInterval ) {
@@ -200,6 +214,9 @@ window.addEventListener('load', () => {
                         if(enemy.lives <= 0) {
                             enemy.markedForDeletion = true;
                             this.score += enemy.score;
+                            if(this.score >= this.winningScore) {
+                                this.gameOver = true;
+                            }
                         }
                     }
                 })
