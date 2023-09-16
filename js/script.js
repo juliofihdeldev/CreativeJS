@@ -61,6 +61,7 @@ window.addEventListener('load', () => {
             this.speedY = 0; 
             this.maxSpeed = 3;
             this.projectiles = [];
+        
         }
 
         update() {
@@ -68,7 +69,7 @@ window.addEventListener('load', () => {
             else if(this.game.keys.includes('ArrowDown')) this.speedY = this.maxSpeed;
             else this.speedY = 0;
             this.y += this.speedY;
-            // handle player projectiles
+            // Handle player projectiles
             this.projectiles.forEach(projectile => {
                 projectile.update();
             });
@@ -76,16 +77,16 @@ window.addEventListener('load', () => {
         }
 
         draw(context) {
-            context.fillStyle = 'red';
+            context.fillStyle = 'black';
             context.fillRect(this.x, this.y, this.width, this.height);
-            // draw projectiles
+            // Draw projectiles
             this.projectiles.forEach(projectile => {
                 projectile.draw(context);
             });
         }
 
         shootUp() {
-            if (this.game.ammo > 0){
+            if ( this.game.ammo > 0 ) {
                 this.projectiles.push(new Projectile(this.game, this.x + this.width, this.y));
                 this.game.ammo--;
             }
@@ -93,7 +94,30 @@ window.addEventListener('load', () => {
     }
 
     class Enemy {
+        constructor( game ) {
+            this.game = game;
+            this.x = this.game.width;
+            this.speedX = Math.random() * -1.5 - 0.5;
+        }
 
+        update() {
+            this.x += this.speedX;
+            if(this.x + this.width < 0) this.markedForDeletion = true;
+        }
+
+        draw(context) {
+            context.fillStyle = 'red';
+            context.fillRect(this.x, this.y, this.width, this.height);  
+        }
+    }
+
+    class Angler1 extends Enemy {
+        constructor(game) {
+            super(game);
+            this.width = 228 * 0.2;
+            this.height = 169 * 0.2;   
+            this.y = Math.random() * (this.game.height  * 0.9- this.height);
+        }
     }
 
     class Layer{
@@ -113,9 +137,7 @@ window.addEventListener('load', () => {
         }   
         draw(context) {
             context.font = `${this.fontSize}px ${this.fontFamily}`;
-
             context.fillStyle = this.color;
-
             context.fillText(`Ammo: ${this.game.ammo}`, 20, 40);
             for (let i = 0; i < this.game.ammo; i++) {
                 context.fillRect(20 + (i * 10), 50, 5, 20);
@@ -131,10 +153,15 @@ window.addEventListener('load', () => {
             this.inputHandler = new InputHandler(this);
             this.ui = new UI(this);
             this.keys = [];
+            this.enemies = [];
             this.ammo = 20;
             this.ammoTimer = 0;
             this.ammoInterval = 500;
             this.maxAmmo = 50;
+            this.gameOver = false;
+
+            this.enemyTimer = 0;
+            this.enemyInterval = 1000;
         }
         update( deltaTime) {
             this.player.update();
@@ -144,10 +171,29 @@ window.addEventListener('load', () => {
             }else{
                 this.ammoTimer += deltaTime;
             }
+
+            this.enemies.forEach(enemy => {
+                enemy.update();
+            })
+
+            this.enemies = this.enemies.filter(enemy => !enemy.markedForDeletion);
+            if(this.enemyTimer > this.enemyInterval  && !this.gameOver) {
+                this.addEnemy();
+                this.enemyTimer = 0;
+            }else{
+                this.enemyTimer += deltaTime;
+            }
         }
+
         draw(context) {
             this.player.draw(context);
             this.ui.draw(context);
+            this.enemies.forEach(enemy => {
+                enemy.draw(context);
+            })
+        }
+        addEnemy() {
+            this.enemies.push(new Angler1(this));
         }
     } 
 
