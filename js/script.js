@@ -155,6 +155,19 @@ window.addEventListener('load', () => {
         }
     }
 
+
+    class Angler2 extends Enemy {
+        constructor(game) {
+            super(game);
+            this.width = 213;
+            this.height = 156;   
+            this.lives = 10;
+            this.y = Math.random() * (this.game.height  * 0.9 - this.height);
+            this.image = document.getElementById('angler2');
+            this.frameY =  Math.floor(Math.random() * 2);
+        }
+    }
+
     class Layer{
         constructor(game, image, speedModifier) {
             this.game = game;
@@ -331,6 +344,7 @@ window.addEventListener('load', () => {
 
             this.enemies = this.enemies.filter(enemy => !enemy.markedForDeletion);
             if(this.enemyTimer > this.enemyInterval  && !this.gameOver) {
+            
                 this.addEnemy();
                 this.enemyTimer = 0;
             }else{
@@ -349,7 +363,9 @@ window.addEventListener('load', () => {
            this.background.layer4.draw(context);
         }
         addEnemy() {
-            this.enemies.push(new Angler1(this));
+            const randomize = Math.random() * 100;
+            if(randomize < 50) this.enemies.push(new Angler1(this));
+            else this.enemies.push(new Angler2(this));
         }
 
         checkCollision(rect1, rect2) {
