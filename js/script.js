@@ -2,19 +2,18 @@ window.addEventListener('load', () => {
     // canvas setup
     const canvas = document.querySelector('#canvas1');
     const ctx = canvas.getContext('2d');
-    canvas.width = 1500; //window.innerWidth;
-    canvas.height = 500; //window.innerHeight;
+    canvas.width = 1700; 
+    canvas.height = 500; 
 
     class InputHandler {
         constructor(game) {
             this.game = game;
             window.addEventListener('keydown', event => {
-               
                 if ( ((event.key === 'ArrowUp')  
                     || (event.key === 'ArrowDown')
                 )  && this.game.keys.indexOf(event.key) === -1) { 
                     this.game.keys.push(event.key);
-                }else if (event.key === ' ') {
+                } else if (event.key === ' ') {
                     if(this.game.gameOver) return
                     this.game.player.shootUp();
                 }
@@ -42,20 +41,21 @@ window.addEventListener('load', () => {
             this.game = game;
             this.x = x;
             this.y = y;
-            this.width = 100;
+            this.width = 30;
             this.height = 10;
-            this.speed = 80;
-            this.damage = 1;
+            this.speed = 20;
+            this.damage = 2;
             this.markedForDeletion = false;
+            this.image = document.getElementById('projectile');
         }
+    
         update() {
             this.x += this.speed;
             if(this.x > this.game.width * 90 ) this.markedForDeletion = true;
         }
 
         draw(context) {
-            context.fillStyle = 'yellow';
-            context.fillRect(this.x, this.y, this.width, this.height );
+            context.drawImage(this.image, this.x, this.y);         
         }
     }
 
@@ -78,10 +78,21 @@ window.addEventListener('load', () => {
             this.player_lives= 10;
             this.projectiles = [];
             this.image = document.getElementById('player');
+
+            this.powerUp = false;
+            this.powerUpTimer = 0;
+            this.powerUpInterval = 5000;
         }
 
-        update() {
-            if(this.game.keys.includes('ArrowUp')) this.speedY = -this.maxSpeed;
+        update(deltaTime) {
+
+            // check player position is out of bounds
+            if(this.y < 0) this.y = 0;
+            if(this.y + this.height > this.game.height) this.y = this.game.height - this.height;
+            
+            if(this.game.keys.includes('ArrowUp')) {
+                this.speedY = -this.maxSpeed;
+            }
             else if(this.game.keys.includes('ArrowDown')) this.speedY = this.maxSpeed;
             else this.speedY = 0;
             this.y += this.speedY;
@@ -91,13 +102,23 @@ window.addEventListener('load', () => {
                 projectile.update();
             });
             this.projectiles = this.projectiles.filter(projectile => !projectile.markedForDeletion);
+            // Handle Power up
+            if(this.powerUp) {
+                if(this.powerUpTimer > this.powerUpInterval) {
+                    this.powerUp = false;
+                    this.powerUpTimer = 0;
+                    this.frameY = 0;
+                }else{
+                    this.powerUpTimer += deltaTime;
+                    this.frameY =1;
+                    this.game.ammo +=0.1;
+                }
+            }
         }
 
         draw(context) {
            if (this.game.debug) context.strokeRect(this.x, this.y, this.width, this.height);
-            // Draw player image
-            context.drawImage(this.image, this.frameX * this.width, this.frameY * this.height, this.width,  this.height,  this.x, this.y, this.width, this.height);
-
+          
             // Animate player image
             if(this.frameX < this.maxFrame) this.frameX++;
             else this.frameX = 0;
@@ -105,15 +126,34 @@ window.addEventListener('load', () => {
             // Draw projectiles
             this.projectiles.forEach(projectile => {
                 projectile.draw(context);
-            });            
+            });        
+              // Draw player image
+              context.drawImage(this.image, this.frameX * this.width, this.frameY * this.height, this.width,  this.height,  this.x, this.y, this.width, this.height);
+    
         }
 
+        
         shootUp() {
             if ( this.game.ammo > 0 ) {
                 this.projectiles.push(new Projectile(this.game, this.x  + this.width - 140, this.y + 30));
                 this.game.ammo--;
             }
+            if(this.powerUp) this.shootBottom();
         }
+
+        shootBottom() {
+            this.projectiles.push(new Projectile(this.game, this.x  + this.width - 140, this.y + 175));
+            this.game.ammo--;
+        }
+
+        enterPowerUp() {
+
+            this.powerUp = true;
+            this.powerUpTimer = 0;
+            this.game.ammo = this.game.maxAmmo;
+            this.player_lives += 2;
+        }
+
     }
 
     class Enemy {
@@ -137,7 +177,7 @@ window.addEventListener('load', () => {
         }
 
         draw(context) {
-           if(this.game.debug)  context.strokeRect(this.x, this.y, this.width, this.height);  
+           if(this.game.debug) context.strokeRect(this.x, this.y, this.width, this.height);  
             context.drawImage(this.image,  this.frameX * this.width, this.frameY * this.width, this.width, this.height, this.x, this.y ,this.width, this.height);
             context.font = "20px Helvetica";
             context.fillText(this.lives, this.x, this.y);
@@ -168,6 +208,21 @@ window.addEventListener('load', () => {
         }
     }
 
+
+    class LuckyFish extends Enemy {
+        constructor(game) {
+            super(game);
+            this.width = 99;
+            this.height = 95;   
+            this.lives = 2;
+            this.score = 15;
+            this.y = Math.random() * (this.game.height  * 0.9 - this.height);
+            this.image = document.getElementById('lucky');
+            this.frameY =  Math.floor(Math.random() * 2);
+            this.type = 'lucky';
+        }
+    }
+
     class Layer{
         constructor(game, image, speedModifier) {
             this.game = game;
@@ -179,7 +234,6 @@ window.addEventListener('load', () => {
             this.y = 0;
         }
         update() {
-            // this.x -= this.game.player.speedX * this.speedModifier;
             if(this.x < -this.width) this.x = 0;
             this.x -= this.game.speed * this.speedModifier;
         }
@@ -224,7 +278,7 @@ window.addEventListener('load', () => {
         constructor(game) {
             this.game = game;
             this.fontSize = 30;
-            this.fontFamily = 'Helvetica';
+            this.fontFamily = 'Bangers';
             this.color = 'yellow';
         }   
         draw(context) {
@@ -236,19 +290,23 @@ window.addEventListener('load', () => {
             context.shadowColor = 'black';
             context.shadowBlur = 2;
 
+            // score
+            context.fillStyle = 'White';
             context.fillText(`Ammo: ${this.game.ammo}`, 20, 80);
             context.fillText(`Lives: ${this.game.player.player_lives}`, 20, 40);
 
             // score
             context.fillStyle = 'White';
-            context.fillText(`Score: ${this.game.score}`, 140, 40);
+            context.fillText(`Score: ${this.game.score}`, 160, 40);
+
+            if(this.game.player.powerUp)  context.fillStyle = 'Yellow';
 
             for (let i = 0; i < this.game.ammo; i++) {
                 context.fillRect(20 + (i * 10), 100, 5, 40);
             }  
             // game time on screen
             context.fillStyle = 'White';
-            context.fillText(`Time: ${Math.floor(this.game.gameTime / 1000)}`, 280, 40); 
+            context.fillText(`Time: ${Math.floor(this.game.gameTime / 100)}`, 320, 40); 
 
             if (this.game.gameOver) {
                     context.textAlign = 'center';
@@ -308,7 +366,7 @@ window.addEventListener('load', () => {
             // draw layer 4
             this.background.layer4.update();
 
-            this.player.update();
+            this.player.update(deltaTime);
             if(this.ammoTimer > this.ammoInterval ) {
                 if(this.ammo < this.maxAmmo) this.ammo++;
                 this.ammoTimer = 0;
@@ -320,16 +378,20 @@ window.addEventListener('load', () => {
                 enemy.update();
 
                 if(this.checkCollision(this.player, enemy)) {
-                    enemy.markedForDeletion = true;    
-                    this.player.player_lives--;
+
+                    if(enemy.type =='lucky') this.player.enterPowerUp();
+                    else this.player.player_lives--;
+                       
+                    enemy.markedForDeletion = true;  
                     if(this.player.player_lives <= 0) {
                         this.gameOver = true;
-                    }
+                    }  
+
                 }
 
                 this.player.projectiles.forEach(projectile => { 
                     if(this.checkCollision(projectile, enemy)) {
-                        enemy.lives -= projectile.damage;
+                        enemy.lives -= enemy.type != "lucky" ? projectile.damage : this.player.player_lives * 0.1;
                         projectile.markedForDeletion = true;
                         if(enemy.lives <= 0) {
                             enemy.markedForDeletion = true;
@@ -363,9 +425,10 @@ window.addEventListener('load', () => {
            this.background.layer4.draw(context);
         }
         addEnemy() {
-            const randomize = Math.random() * 100;
-            if(randomize < 50) this.enemies.push(new Angler1(this));
-            else this.enemies.push(new Angler2(this));
+            const randomize = Math.random() ;
+            if(randomize < 0.3) this.enemies.push(new Angler1(this));
+            if(randomize <  0.6) this.enemies.push(new Angler2(this));
+            else this.enemies.push(new LuckyFish(this));
         }
 
         checkCollision(rect1, rect2) {
@@ -374,17 +437,17 @@ window.addEventListener('load', () => {
                 rect1.y < rect2.y + rect2.height &&
                 rect1.y + rect1.height > rect2.y) 
         }
+
         handleLevelUp() {
             this.gameOver = false;
-            this.enemyInterval *=  0.7;
-            this.speed += 0.5;
-            this.winningScore += 50;
-            this.ammo  *= 1.5;
-            this.ammoInterval *= 0.8;
+            this.enemyInterval *= 0.8;
+            this.speed += 1;
+            this.winningScore *= 2;
+            this.ammo += 10;
+            this.ammoInterval += 10;
             this.player.player_lives = 10;
             this.gameTime = 0;
-            this.timeLimit *= 0.8;
-            this.game.player.projectile.damage += 1;
+            this.timeLimit += 30000;
         }
 
         handleRestart() {
