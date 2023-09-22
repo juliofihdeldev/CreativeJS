@@ -86,9 +86,8 @@ window.addEventListener('load', () => {
             this.markedForDeletion = false;
             this.angle =0;
             this.va = Math.random() * 0.2 - 0.1; // velocity of angle
-
             this.bounced = 0;
-            this.bottomBounceBoundary = Math.random() * 100 + 60; 
+            this.bottomBounceBoundary = Math.random() * 80 + 60; 
         }
 
 
@@ -140,11 +139,9 @@ window.addEventListener('load', () => {
         }
 
         update(deltaTime) {
-
             // check player position is out of bounds
             if(this.y  > this.game.height  - this.height * 0.7) this.y = this.game.height - this.height * 0.7;
             else if(this.y < - this.height * 0.3) this.y = - this.height * 0.3;
-            
 
             if(this.game.keys.includes('ArrowUp')) {
                 this.speedY = -this.maxSpeed;
@@ -209,7 +206,6 @@ window.addEventListener('load', () => {
             this.player_lives += 2;
             this.sound_power_up.play();
         }
-
     }
 
     class Enemy {
@@ -245,7 +241,7 @@ window.addEventListener('load', () => {
             super(game);
             this.width = 228;
             this.height = 169;   
-            this.y = Math.random() * (this.game.height  * 0.9 - this.height);
+            this.y = Math.random() * (this.game.height  * 0.95 - this.height);
             this.image = document.getElementById('angler1');
             this.frameY =  Math.floor(Math.random() * 3);
         }
@@ -258,7 +254,7 @@ window.addEventListener('load', () => {
             this.width = 213;
             this.height = 156;   
             this.lives = 7.5;
-            this.y = Math.random() * (this.game.height  * 0.9 - this.height);
+            this.y = Math.random() * (this.game.height  * 0.95 - this.height);
             this.image = document.getElementById('angler2');
             this.frameY =  Math.floor(Math.random() * 2);
         }
@@ -271,11 +267,25 @@ window.addEventListener('load', () => {
             this.width = 99;
             this.height = 95;   
             this.lives = 2;
-            this.score = 15;
-            this.y = Math.random() * (this.game.height  * 0.9 - this.height);
+            this.score = 10;
+            this.y = Math.random() * (this.game.height  * 0.95 - this.height);
             this.image = document.getElementById('lucky');
             this.frameY =  Math.floor(Math.random() * 2);
             this.type = 'lucky';
+        }
+    }
+
+    class HiveWhales extends Enemy {
+        constructor(game) {
+            super(game);
+            this.width = 400;
+            this.height = 272;   
+            this.lives = 20;
+            this.score = this.lives;
+            this.y = Math.random() * (this.game.height  * 0.95 - this.height);
+            this.image = document.getElementById('hivewhale');
+            this.frameY =  Math.floor(Math.random() * 2);
+            this.speedX = Math.random() * -1.2 - 0.2;
         }
     }
 
@@ -482,23 +492,23 @@ window.addEventListener('load', () => {
                 }
 
                 this.player.projectiles.forEach(projectile => { 
+
                     if(this.checkCollision(projectile, enemy)) {
-
-                        enemy.lives -= enemy.type != "lucky" ? projectile.damage : this.player.player_lives * 0.1;
                         if(enemy.type == "lucky") this.player.player_lives -= 1;
-
+                        enemy.lives -= enemy.type != "lucky" ? projectile.damage : this.player.player_lives * 0.1;
                         projectile.markedForDeletion = true;
+
                            // create particles
                         this.particles.push(new Particle(this, enemy.x + enemy.width * 0.5, enemy.y + enemy.height * 0.5));
                         
                         if(enemy.lives <= 0) {
-
                             for (let i = 0; i < 8; i++) {
                                 this.particles.push(new Particle(this, enemy.x + enemy.width * 0.5, enemy.y + enemy.height * 0.5));
                             } 
 
                             enemy.markedForDeletion = true;
                             this.player.shoot_sound.play();
+
                            if( !this.gameOver) this.score += enemy.score;
                             if(this.score >= this.winningScore) {
                                 this.gameOver = true;
@@ -523,8 +533,9 @@ window.addEventListener('load', () => {
 
         draw(context) {
             this.background.draw(context);
-            this.player.draw(context);
             this.ui.draw(context);
+            this.player.draw(context);
+        
             this.particles.forEach(particle => particle.draw(context));
 
             this.enemies.forEach(enemy => {
@@ -536,7 +547,8 @@ window.addEventListener('load', () => {
         addEnemy() {
             const randomize = Math.random() ;
             if(randomize < 0.3) this.enemies.push(new Angler1(this));
-            if(randomize < 0.3) this.enemies.push(new Angler2(this));
+            if(randomize < 0.6) this.enemies.push(new Angler2(this));
+            if(randomize < 0.7) this.enemies.push(new HiveWhales(this));
             else this.enemies.push(new LuckyFish(this));
         }
 
